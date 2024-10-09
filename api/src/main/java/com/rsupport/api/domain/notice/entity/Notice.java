@@ -1,5 +1,6 @@
-package com.rsupport.api.domain.notice;
+package com.rsupport.api.domain.notice.entity;
 
+import com.rsupport.api.domain.notice.dto.NoticeDTO;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,4 +54,16 @@ public class Notice {
 
     @OneToMany(mappedBy = "announcement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NoticeAttachment> attachments;
+
+    public void modifyNotice(NoticeDTO noticeDTO) {
+        this.title = noticeDTO.getTitle();
+        this.content = noticeDTO.getContent();
+        this.startDatetime = noticeDTO.getStartDatetime();
+        this.endDatetime = noticeDTO.getEndDatetime();
+        this.attachments = noticeDTO.getAttachments().stream()
+                .map(attachments -> NoticeAttachment.builder()
+                        .fileName(attachments.getFileName())
+                        .filePath(attachments.getFilePath()).build())
+                .toList();
+    }
 }

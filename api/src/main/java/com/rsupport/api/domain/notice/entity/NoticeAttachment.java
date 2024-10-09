@@ -1,4 +1,4 @@
-package com.rsupport.api.domain.notice;
+package com.rsupport.api.domain.notice.entity;
 
 
 import jakarta.persistence.Column;
