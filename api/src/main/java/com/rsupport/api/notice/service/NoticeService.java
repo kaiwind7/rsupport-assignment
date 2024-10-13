@@ -11,6 +11,8 @@ import com.rsupport.api.domain.notice.request.NoticeRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
@@ -43,6 +45,7 @@ public class NoticeService {
      * @param pageable
      * @return
      */
+    @Cacheable(value = "notices", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<NoticeDTO> findNoticeAll(Pageable pageable) {
         return noticeRepository.findActiveNotices(LocalDateTime.now(), pageable)
                 .map(NoticeDTO::fromEntity);
@@ -91,6 +94,7 @@ public class NoticeService {
      * @return 공지사항 저장정보
      */
     @Transactional
+    @CacheEvict(value = "notices", allEntries = true)
     public NoticeDTO saveNotice(NoticeRequest request, List<MultipartFile> files) {
         Notice notice = Notice.builder()
                 .title(request.getTitle())

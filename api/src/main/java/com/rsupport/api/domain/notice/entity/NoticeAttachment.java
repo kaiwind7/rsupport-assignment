@@ -43,7 +43,11 @@ public class NoticeAttachment {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // Notice 설정 메서드
+    /**
+     * Notice 설정 메서드
+     *
+     * @param notice 공지사항Entity
+     */
     public void assignNotice(Notice notice) {
         this.notice = notice;
     }

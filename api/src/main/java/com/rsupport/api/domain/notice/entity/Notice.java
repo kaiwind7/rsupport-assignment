@@ -63,6 +63,11 @@ public class Notice {
     @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NoticeAttachment> attachments;
 
+    /**
+     * 공지사항 변경
+     *
+     * @param noticeRequest 공지사항 변경 정보
+     */
     public void modifyNotice(NoticeRequest noticeRequest) {
         this.title = noticeRequest.getTitle();
         this.content = noticeRequest.getContent();
@@ -74,10 +79,5 @@ public class Notice {
     public void addAttachment(NoticeAttachment attachment) {
         this.attachments.add(attachment);
         attachment.assignNotice(this); // Notice 설정
-    }
-
-    // 조회수 증가 메서드
-    public void incrementViews() {
-        this.views++;
     }
 }
