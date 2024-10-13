@@ -42,4 +42,9 @@ public class NoticeAttachment {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // Notice 설정 메서드
+    public void assignNotice(Notice notice) {
+        this.notice = notice;
+    }
 }

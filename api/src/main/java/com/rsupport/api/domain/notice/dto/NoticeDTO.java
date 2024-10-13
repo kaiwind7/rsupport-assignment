@@ -16,8 +16,11 @@ import java.util.List;
 public class NoticeDTO {
     private String title;
     private String content;
+    private String author;
+    private int views;
     private LocalDateTime startDatetime;
     private LocalDateTime endDatetime;
+    private LocalDateTime createdAt;
     private List<NoticeAttachmentDTO> attachments;
 
     public static NoticeDTO fromEntity(Notice notice) {
@@ -28,6 +31,9 @@ public class NoticeDTO {
         return NoticeDTO.builder()
                 .title(notice.getTitle())
                 .content(notice.getContent())
+                .author(notice.getAuthor())
+                .views(notice.getViews())
+                .createdAt(notice.getCreatedAt())
                 .startDatetime(notice.getStartDatetime())
                 .endDatetime(notice.getEndDatetime())
                 .attachments(noticeAttachmentDTOs).build();

@@ -1,11 +1,15 @@
 spring:
   application:
     name: rsupport-api
-
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 300MB
+  
   sql:
     init:
       mode: always
-      data-locations: classpath:data.sql
+      #      data-locations: classpath:data.sql
       schema-locations: classpath:schema.sql
 
   datasource:
@@ -26,3 +30,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
+notice:
+  file:
+    path: "uploads/notices/"
