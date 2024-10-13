@@ -35,3 +35,5 @@ http://localhost:8080/swagger-ui/index.html
 ```
 
 ## 데이터 설계
+
+![rsupport_erd](.\rsupport_erd.jpg)

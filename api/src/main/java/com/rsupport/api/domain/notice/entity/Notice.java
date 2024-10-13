@@ -1,6 +1,5 @@
 package com.rsupport.api.domain.notice.entity;
 
-import com.rsupport.api.domain.notice.dto.NoticeDTO;
 import com.rsupport.api.domain.notice.request.NoticeRequest;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -19,7 +18,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Builder

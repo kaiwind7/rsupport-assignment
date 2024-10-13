@@ -5,11 +5,14 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 300MB
-  
+  cache:
+    ehcache:
+      config: classpath:ehcache.xml
+
   sql:
     init:
       mode: always
-      #      data-locations: classpath:data.sql
+      data-locations: classpath:data.sql
       schema-locations: classpath:schema.sql
 
   datasource:

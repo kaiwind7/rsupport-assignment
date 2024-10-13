@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache>
+    <cache alias="notices">
+        <key-type>java.lang.String</key-type>
+        <value-type>java.util.List</value-type>
+        <expiry>
+            <ttl unit="minutes">5</ttl> <!-- 캐시된 데이터의 만료 시간을 5분으로 설정 -->
+        </expiry>
+        <heap unit="entries">1000</heap> <!-- 메모리에 최대 1000개의 캐시 항목 유지 -->
+    </cache>
+</ehcache>
