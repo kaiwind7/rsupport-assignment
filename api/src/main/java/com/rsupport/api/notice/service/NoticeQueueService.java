@@ -4,6 +4,7 @@ import com.rsupport.api.domain.notice.dto.NoticeDTO;
 import com.rsupport.api.domain.notice.entity.Notice;
 import com.rsupport.api.domain.notice.repository.NoticeRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -13,16 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoticeQueueService {
-    private LinkedBlockingQueue<Notice> queue = new LinkedBlockingQueue<>();
+    private ConcurrentLinkedQueue<Notice> queue = new ConcurrentLinkedQueue<>();
     private final Map<String, Notice> requestTrackingMap = new ConcurrentHashMap<>(); // 중복 체크용 Map
 
     private ExecutorService executorService;
@@ -36,48 +37,60 @@ public class NoticeQueueService {
         executorService.execute(this::processQueue);
     }
 
+    @PreDestroy
+    public void cleanUp() {
+        keepProcessing = false;
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
+    }
+
     /**
      * 등록된 큐 진행
      */
     private void processQueue() {
         while (keepProcessing && !Thread.currentThread().isInterrupted()) {
-            Notice notice = null;
-
-            try {
-                notice = queue.take();
-                saveNotice(notice);
-                removeFromTrackingMap(notice);
-            } catch (InterruptedException e) {
-                log.warn("공지사항 등록 스레드가 인터럽트되었습니다.", e);
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                log.error("공지사항 등록 중 오류가 발생했습니다.", e);
+            Notice notice = queue.poll(); // 한 번에 1개의 Notice만 꺼내서 처리
+            if (notice != null) {
+                try {
+                    saveNotice(notice); // 단일 Notice 처리
+                    removeFromTrackingMap(notice);
+                } catch (Exception e) {
+                    log.error("공지사항 등록 중 오류가 발생했습니다.", e);
+                }
             }
         }
     }
 
     public String addNoticeRequestToQueue(Notice notice) {
         String uniqueKey = generateUniqueKey(notice);
-        try {
-            if (requestTrackingMap.putIfAbsent(uniqueKey, notice) == null) {
-                if (!queue.offer(notice, 2, TimeUnit.SECONDS)) {
-                    String message = "공지사항 등록 요청 대기열이 가득 찼습니다. 나중에 다시 시도하세요.";
-                    log.warn(message);
-                    return message;
+        if (requestTrackingMap.putIfAbsent(uniqueKey, notice) == null) {
+            boolean added = false;
+            int retryCount = 3;
+            while (retryCount > 0 && !added) {
+                try {
+                    added = queue.offer(notice);
+                    if (!added) {
+                        retryCount--;
+                        Thread.sleep(1000); // 백오프 로직
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return "큐에 추가하는 동안 인터럽트가 발생했습니다.";
                 }
-            } else {
-                log.info("중복된 요청입니다.: {}", notice);
-                return "중복된 요청입니다.";
             }
-
-            log.info("공지사항 등록 요청이 큐에 추가되었습니다: {}", notice);
-            return "공지사항 등록 요청이 정상적으로 처리되었습니다.";
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            String message = "큐에 추가하는 동안 인터럽트가 발생했습니다.";
-            log.error(message, e);
-            return message;
+            if (!added) {
+                return "공지사항 등록 요청 대기열이 가득 찼습니다. 나중에 다시 시도하세요.";
+            }
+        } else {
+            return "중복된 요청입니다.";
         }
+        return "공지사항 등록 요청이 정상적으로 처리되었습니다.";
     }
 
     private String generateUniqueKey(Notice notice) {
@@ -98,9 +111,8 @@ public class NoticeQueueService {
     @Async("taskExecutor")
     @Transactional
     @CacheEvict(value = "notices", allEntries = true)
-    public NoticeDTO saveNotice(Notice notice) {
-        Notice resultNotice = noticeRepository.save(notice);
-        return NoticeDTO.fromEntity(resultNotice);
+    public void saveNotice(Notice notice) {
+        noticeRepository.save(notice);
     }
 
     /**
