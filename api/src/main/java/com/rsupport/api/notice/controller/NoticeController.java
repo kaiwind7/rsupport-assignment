@@ -49,10 +49,9 @@ public class NoticeController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "저장 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "파일 업로드를 실패했습니다"),
     })
-    public ApiResponse<NoticeDTO> createNotice(@RequestPart(value = "request") NoticeRequest request,
-                                               @RequestPart(value = "files") List<MultipartFile> files) {
-        NoticeDTO noticeDTO = noticeService.saveNotice(request, files);
-        return ApiResponse.success(noticeDTO);
+    public ApiResponse<String> createNotice(@RequestPart(value = "request") NoticeRequest request,
+                                            @RequestPart(value = "files") List<MultipartFile> files) {
+        return ApiResponse.success(noticeService.saveNotice(request, files));
     }
 
     @PutMapping(value = "/{noticeId}", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})

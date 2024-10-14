@@ -73,7 +73,11 @@ public class Notice {
         if (noticeRequest.getEndDatetime() != null) this.endDatetime = noticeRequest.getEndDatetime();
     }
 
-    // 연관 관계 편의 메서드
+    /**
+     * 첨부파일 notice 연결
+     *
+     * @param attachment
+     */
     public void addAttachment(NoticeAttachment attachment) {
         this.attachments.add(attachment);
         attachment.assignNotice(this); // Notice 설정

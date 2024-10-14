@@ -2,6 +2,7 @@ package com.rsupport.api.notice.service;
 
 import com.rsupport.api.common.enums.ErrorCode;
 import com.rsupport.api.common.exception.ServiceException;
+import com.rsupport.api.common.utils.AttachmentFileUtils;
 import com.rsupport.api.domain.notice.dto.NoticeDTO;
 import com.rsupport.api.domain.notice.entity.Notice;
 import com.rsupport.api.domain.notice.entity.NoticeAttachment;
@@ -35,9 +36,8 @@ import java.util.UUID;
 public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final NoticeAttachmentRepository noticeAttachmentRepository;
+    private final NoticeQueueService noticeQueueService;
 
-    @Value("${notice.file.path}")
-    private String NOTICE_FILE_PATH;
 
     /**
      * 공지기간 내 공지사항 목록 조회
@@ -70,7 +70,7 @@ public class NoticeService {
      *
      * @param noticeId 공지사항ID
      */
-    @Async
+    @Async("taskExecutor")
     @Transactional
     public void incrementViews(Long noticeId) {
         noticeRepository.incrementViews(noticeId);
@@ -87,15 +87,8 @@ public class NoticeService {
                 .orElseThrow(() -> new ServiceException("해당 공지가 존재하지 않습니다.", ErrorCode.NOT_FOUND_ENTITY));
     }
 
-    /**
-     * 공지사항 저장
-     *
-     * @param request 공지사항 저장 정보
-     * @return 공지사항 저장정보
-     */
-    @Transactional
-    @CacheEvict(value = "notices", allEntries = true)
-    public NoticeDTO saveNotice(NoticeRequest request, List<MultipartFile> files) {
+
+    public String saveNotice(NoticeRequest request, List<MultipartFile> files) {
         Notice notice = Notice.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -104,66 +97,11 @@ public class NoticeService {
                 .endDatetime(request.getEndDatetime())
                 .attachments(new ArrayList<>()).build();
 
-        List<NoticeAttachment> noticeAttachments = saveNoticeAttachmentFile(files);
+        //파일 우선 저장 처리
+        List<NoticeAttachment> noticeAttachments = AttachmentFileUtils.saveNoticeAttachmentFile(files);
         noticeAttachments.forEach(notice::addAttachment);
 
-        Notice resultNotice = noticeRepository.save(notice);
-        return NoticeDTO.fromEntity(resultNotice);
-    }
-
-
-    /**
-     * 첨부파일 저장
-     *
-     * @param files 파일목록
-     * @return List<NoticeAttachment>
-     */
-    public List<NoticeAttachment> saveNoticeAttachmentFile(List<MultipartFile> files) {
-        Path relativePath = createAttachmentDirectory();
-        return files.stream()
-                .map(file -> saveSingleFile(file, relativePath))
-                .toList();
-
-    }
-
-    /**
-     * 첨부파일 경로 생성
-     *
-     * @return Path
-     */
-    private Path createAttachmentDirectory() {
-        Path currentDirectory = Paths.get("").toAbsolutePath();
-        Path relativePath = currentDirectory.resolve(NOTICE_FILE_PATH + UUID.randomUUID());
-
-        if (!Files.exists(relativePath)) {
-            try {
-                Files.createDirectories(relativePath);
-            } catch (IOException e) {
-                throw new ServiceException(ErrorCode.FILE_UPLOAD_FAILED);
-            }
-        }
-        return relativePath;
-    }
-
-    /**
-     * 파일 저장
-     *
-     * @param file         첨부파일
-     * @param relativePath 첨부파일 경로
-     * @return NoticeAttachment
-     */
-    private NoticeAttachment saveSingleFile(MultipartFile file, Path relativePath) {
-        Path filePath = relativePath.resolve(file.getOriginalFilename());
-        try {
-            Files.write(filePath, file.getBytes());
-        } catch (IOException e) {
-            throw new ServiceException(ErrorCode.FILE_UPLOAD_FAILED);
-        }
-        log.info("File saves to: {}", filePath);
-        return NoticeAttachment.builder()
-                .fileName(file.getOriginalFilename())
-                .filePath(filePath.toString())
-                .build();
+        return noticeQueueService.addNoticeRequestToQueue(notice);
     }
 
     /**
@@ -186,7 +124,7 @@ public class NoticeService {
         }
 
         // 첨부파일 추가
-        List<NoticeAttachment> noticeAttachment = saveNoticeAttachmentFile(files);
+        List<NoticeAttachment> noticeAttachment = AttachmentFileUtils.saveNoticeAttachmentFile(files);
         noticeAttachment.stream().forEach(notice::addAttachment);
 
         return NoticeDTO.fromEntity(notice);
