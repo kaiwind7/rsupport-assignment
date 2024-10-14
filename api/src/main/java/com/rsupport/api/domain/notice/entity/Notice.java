@@ -67,10 +67,10 @@ public class Notice {
      * @param noticeRequest 공지사항 변경 정보
      */
     public void modifyNotice(NoticeRequest noticeRequest) {
-        this.title = noticeRequest.getTitle();
-        this.content = noticeRequest.getContent();
-        this.startDatetime = noticeRequest.getStartDatetime();
-        this.endDatetime = noticeRequest.getEndDatetime();
+        if (noticeRequest.getTitle() != null) this.title = noticeRequest.getTitle();
+        if (noticeRequest.getContent() != null) this.content = noticeRequest.getContent();
+        if (noticeRequest.getStartDatetime() != null) this.startDatetime = noticeRequest.getStartDatetime();
+        if (noticeRequest.getEndDatetime() != null) this.endDatetime = noticeRequest.getEndDatetime();
     }
 
     // 연관 관계 편의 메서드

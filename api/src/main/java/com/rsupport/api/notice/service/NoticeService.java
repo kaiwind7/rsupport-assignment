@@ -178,8 +178,12 @@ public class NoticeService {
     public NoticeDTO updateNotice(Long noticeId, NoticeRequest request, List<MultipartFile> files) {
         Notice notice = findNoticeById(noticeId);
 
+        notice.modifyNotice(request);
+
         // 첨부파일 삭제
-        deleteAttachmentFile(notice, request.getDeleteFiles());
+        if (request.getDeleteFiles() != null && !request.getDeleteFiles().isEmpty()) {
+            deleteAttachmentFile(notice, request.getDeleteFiles());
+        }
 
         // 첨부파일 추가
         List<NoticeAttachment> noticeAttachment = saveNoticeAttachmentFile(files);
