@@ -277,7 +277,7 @@ http://localhost:8080/swagger-ui/index.html
 >  - 요청이 성공적으로 처리되면 `requestTrackingMap`에서 해당 요청을 제거하여 중복 처리를 방지.
 >  - 큐가 가득 찬 경우 백오프(backoff) 로직을 통해 일정 시간 동안 재시도를 수행.
 
-![image-20241015014756517](.\rsupport-async.png)
+![rsupport-async.png](rsupport-async.png)
 
 ## 3. Redis 및 Kafka 전환 고려
 
