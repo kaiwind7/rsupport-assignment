@@ -42,10 +42,10 @@ public class NoticeServiceIntegrationTest {
                 .startDatetime(LocalDateTime.now())
                 .endDatetime(LocalDateTime.now().plusDays(1)).build();
 
-        NoticeDTO savedNotice = noticeService.saveNotice(request, new ArrayList<>());
+        String result = noticeService.saveNotice(request, new ArrayList<>());
 
-        assertNotNull(savedNotice);
-        assertEquals("통합 테스트 공지 타이틀", savedNotice.getTitle());
+        assertNotNull(result);
+        assertTrue(result.contains("공지사항 등록 요청이 정상적으로 처리되었습니다."));
     }
 
     @Test

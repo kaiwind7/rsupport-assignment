@@ -34,9 +34,12 @@ public class NoticeDTO {
     private List<NoticeAttachmentDTO> attachments;
 
     public static NoticeDTO fromEntity(Notice notice) {
-        List<NoticeAttachmentDTO> noticeAttachmentDTOs = notice.getAttachments().stream()
-                .map(NoticeAttachmentDTO::fromEntity)
-                .toList();
+        List<NoticeAttachmentDTO> noticeAttachmentDTOs = null;
+        if (!notice.getAttachments().isEmpty() && notice.getAttachments() != null) {
+            noticeAttachmentDTOs = notice.getAttachments().stream()
+                    .map(NoticeAttachmentDTO::fromEntity)
+                    .toList();
+        }
 
         return NoticeDTO.builder()
                 .title(notice.getTitle())

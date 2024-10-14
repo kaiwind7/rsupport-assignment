@@ -84,9 +84,8 @@ public class NoticeService {
      */
     private Notice findNoticeById(Long noticeId) {
         return noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new ServiceException("해당 공지가 존재하지 않습니다.", ErrorCode.NOT_FOUND_ENTITY));
+                .orElseThrow(() -> new ServiceException("해당 공지사항이 존재하지 않습니다.", ErrorCode.NOT_FOUND_ENTITY));
     }
-
 
     public String saveNotice(NoticeRequest request, List<MultipartFile> files) {
         Notice notice = Notice.builder()

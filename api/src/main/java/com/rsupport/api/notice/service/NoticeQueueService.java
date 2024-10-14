@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -23,12 +22,13 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class NoticeQueueService {
-    private final LinkedBlockingQueue<Notice> queue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<Notice> queue = new LinkedBlockingQueue<>();
     private final Map<String, Notice> requestTrackingMap = new ConcurrentHashMap<>(); // 중복 체크용 Map
 
     private ExecutorService executorService;
 
     private final NoticeRepository noticeRepository;
+    private boolean keepProcessing = true;
 
     @PostConstruct
     private void init() {
@@ -40,7 +40,7 @@ public class NoticeQueueService {
      * 등록된 큐 진행
      */
     private void processQueue() {
-        while (!Thread.currentThread().isInterrupted()) {
+        while (keepProcessing && !Thread.currentThread().isInterrupted()) {
             Notice notice = null;
 
             try {
@@ -58,7 +58,6 @@ public class NoticeQueueService {
 
     public String addNoticeRequestToQueue(Notice notice) {
         String uniqueKey = generateUniqueKey(notice);
-
         try {
             if (requestTrackingMap.putIfAbsent(uniqueKey, notice) == null) {
                 if (!queue.offer(notice, 2, TimeUnit.SECONDS)) {
@@ -102,6 +101,36 @@ public class NoticeQueueService {
     public NoticeDTO saveNotice(Notice notice) {
         Notice resultNotice = noticeRepository.save(notice);
         return NoticeDTO.fromEntity(resultNotice);
+    }
+
+    /**
+     * 루프 종료 제어 메서드
+     */
+    public void stopProcessing() {
+        this.keepProcessing = false;
+    }
+
+    /**
+     * 테스트를 위한 메서드
+     *
+     * @param notice
+     * @return
+     */
+    public String getUniqueKeyForTest(Notice notice) {
+        return generateUniqueKey(notice);
+    }
+
+    /**
+     * 테스트를 위한 메서드
+     *
+     * @return
+     */
+    public Map<String, Notice> getRequestTrackingMapForTest() {
+        return requestTrackingMap;
+    }
+
+    public void processQueueForTest() {
+        processQueue();
     }
 
 }
